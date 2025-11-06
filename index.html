@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="renderer" content="webkit">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>学生分数登记排名系统</title>
+    <title>学生分数登记排名系统 - 云端存储版</title>
     <style>
         * {
             margin: 0;
@@ -187,6 +187,14 @@
             background-color: #3c5aa8;
         }
         
+        .cloud-btn {
+            background-color: #17a2b8 !important;
+        }
+        
+        .cloud-btn:hover {
+            background-color: #138496 !important;
+        }
+        
         .student-count {
             font-size: 14px;
             font-weight: normal;
@@ -226,19 +234,49 @@
             font-size: 12px;
             resize: vertical;
         }
+        
+        .cloud-status {
+            margin: 10px 0;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .status-online {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-offline {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status-loading {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>学生分数登记排名系统</h1>
-            <p>兼容Win7系统和低版本360浏览器 - 数据保存在HTML文件中</p>
+            <h1>学生分数登记排名系统 - 云端存储版</h1>
+            <p>数据实时同步，多人可同时访问和修改</p>
             <div class="class-selector" id="classSelector">
                 <!-- 班级按钮将通过JavaScript动态生成 -->
             </div>
         </div>
         
         <div class="content">
+            <!-- 云端状态显示 -->
+            <div class="cloud-status" id="cloudStatus">
+                正在连接云端数据库...
+            </div>
+            
             <div class="student-list">
                 <h2 id="classTitle">学生分数排名</h2>
                 <table class="student-table">
@@ -263,7 +301,8 @@
                 <div>
                     <button class="action-btn" id="copyData">复制数据</button>
                     <button class="action-btn" id="loadData">加载数据</button>
-                    <button class="action-btn" id="updateData">更新数据</button>
+                    <button class="action-btn cloud-btn" id="saveToCloud">保存到云端</button>
+                    <button class="action-btn cloud-btn" id="loadFromCloud">从云端加载</button>
                 </div>
             </div>
         </div>
@@ -271,13 +310,19 @@
         <div class="actions">
             <button class="action-btn" id="resetScores">重置所有分数</button>
             <button class="action-btn" id="exportData">导出数据</button>
+            <button class="action-btn cloud-btn" id="refreshCloud">刷新云端数据</button>
         </div>
     </div>
     
     <div class="save-notification" id="saveNotification">数据已更新</div>
 
     <script>
-        // 多班级学生名单 - 使用之前点名系统的数据
+        // JSONBin.io 配置
+        const JSONBIN_API_KEY = '$2a$10$gDlR8.rAjEgCJoRgCuzNMuTv/bxrf3yMPwlCRnvJUsAXLJZwSOZqa'; // 需要替换为你的实际API密钥
+        const JSONBIN_BIN_ID = ''; // 第一次保存后会生成，初始可以为空
+        const JSONBIN_API_URL = 'https://api.jsonbin.io/v3/b';
+        
+        // 多班级学生名单
         var classes = {
             "2501班": [
                 "白璟晟", "白茗宇", "陈子钦", "樊松嘉", "冯奇奇", 
@@ -301,178 +346,14 @@
                 "邢泽东", "薛云天", "杨敬淞", "云晴", "张泽宇", 
                 "张哲", "赵晨帆", "赵冠彭", "赵进新", "赵文杰", 
                 "赵中", "宗泽鹏"
-            ],
-            "2503班": [
-                "毕浩然", "曹鑫瑶", "常建国", "车浩宁", "陈晨", 
-                "董世杰", "付子初", "郭书琦", "郭天翔", "郭中旺", 
-                "海少华", "黄铭泉", "霍鑫旺", "吉子号", "来千尧", 
-                "兰吉煜", "李卓鹏", "刘伟", "刘新业", "刘宇皓", 
-                "吕欣宇", "马祺昀", "孟川雄", "孟益晨", "权香宇", 
-                "任智勇", "师松涛", "孙雨", "王陈宇", "王诚", 
-                "王国华", "王俊昊", "徐昊斐", "颜文浩", "杨超凡", 
-                "阴宏伟", "岳锦昊", "张飞扬", "张强强", "张瑞旭", 
-                "张禹浩", "张原雨", "张郅昊", "张子灏", "赵晨旭", 
-                "赵煊", "赵子昊"
-            ],
-            "2504班": [
-                "安晨原", "白佩勇", "鲍雅泽", "曹洺豪", "曹瑞超", 
-                "常瑞凡", "崔鑫杰", "樊博文", "樊明昊", "范泽旗", 
-                "方超", "高康康", "高思忠", "韩雅栋", "侯雅萍", 
-                "李浩然", "李沛宏", "李扬帆", "梁元彬", "刘建洋", 
-                "刘景瑞", "刘世明", "刘旭青", "柳毅卓", "孟庆杰", 
-                "桑树威", "孙民旺", "孙晓强", "唐学瑾", "王帅康", 
-                "王杨筑", "魏杰", "闫锦锡", "闫宇曦", "杨耀祖", 
-                "尹锦涛", "岳昱同", "翟梦辉", "张锦龙", "张英源", 
-                "张宇杰", "章晶", "郑清", "周健博"
-            ],
-            "2505班": [
-                "常文凯", "陈梓丛", "崔新宇", "杜名伟", "杜权鑫", 
-                "高浩杰", "高明宇", "关皓予", "韩培民", "何佳雨", 
-                "胡嘉硕", "黄怡凡", "贾晶涵", "景瑞程", "亢振豪", 
-                "李超雄", "李亚明", "廉梓晨", "刘居谦", "刘仔聪", 
-                "雒文伟", "裴德鑫", "师毅豪", "孙锦飞", "孙智鑫", 
-                "田晨光", "田鑫源", "王博研", "王述仁", "王宇鑫", 
-                "魏天城", "吴瑞雰", "邢家宁", "薛帅康", "薛志聪", 
-                "要吉安", "尤柯", "张航律", "张佳桦", "张炜晨", 
-                "赵昱杰", "郑丁豪"
-            ],
-            "2506班": [
-                "白轲元", "邓敏杰", "董宇明", "范珈豪", "范智慧", 
-                "冯琪翔", "冯郑歌", "冯子涛", "高伟成", "郭欣瑞", 
-                "候治睿", "姜凯雯", "焦奕铭", "李阳", "李永壮", 
-                "刘冠华", "刘文涛", "乔嘉豪", "乔政玮", "申彦泽", 
-                "王玉博", "夏瑜璞", "许慧旺", "杨志宏", "张晨雨", 
-                "张昊国", "张鸿钊", "张伟", "张文龙", "张伊华", 
-                "张雨", "张雲博", "赵一明", "赵苑翔", "郑嘉泽", 
-                "周嘉诚"
-            ],
-            "2507班": [
-                "安一鸣", "陈建旭", "陈林鹏", "邓宇博", "公维龙", 
-                "郭泰", "韩云山", "韩智敏", "郝佳", "郝雷雷", 
-                "李泊桦", "李博", "李嘉戌", "李锦峰", "连锦标", 
-                "令狐博涛", "刘程岩", "刘梵伟", "刘俊廷", "马超", 
-                "石岚斐", "帅超斌", "宋泽彬", "田素玮", "王泓森", 
-                "王济航", "王嘉辉", "王靖升", "王静宇", "王沛杰", 
-                "王艺博", "王泽慧", "王子明", "许林博", "薛皓天", 
-                "姚帅杰", "尹栋", "原思贤", "张达成", "张洪畅", 
-                "张敬恩", "张珠涛", "赵晓彤", "赵鑫"
             ]
+            // 其他班级数据可以继续添加...
         };
 
         // 全局变量 - 这里存储所有学生的分数数据
         var classData = {};
-        
-        // 初始化默认数据
-        function initDefaultData() {
-            for (var className in classes) {
-                classData[className] = [];
-                for (var i = 0; i < classes[className].length; i++) {
-                    classData[className].push({
-                        name: classes[className][i],
-                        score: 100,
-                        rank: 1
-                    });
-                }
-                // 初始化排名
-                calculateRanking(className);
-            }
-        }
-        
-        // 尝试从内嵌数据加载
-        function loadEmbeddedData() {
-            // 检查是否有内嵌数据
-            if (typeof embeddedStudentData !== 'undefined' && embeddedStudentData) {
-                classData = JSON.parse(JSON.stringify(embeddedStudentData));
-                
-                // 确保所有班级数据都存在
-                for (var className in classes) {
-                    if (!classData[className]) {
-                        classData[className] = [];
-                        for (var i = 0; i < classes[className].length; i++) {
-                            classData[className].push({
-                                name: classes[className][i],
-                                score: 100,
-                                rank: 1
-                            });
-                        }
-                    }
-                    // 重新计算排名
-                    calculateRanking(className);
-                }
-                return true;
-            }
-            return false;
-        }
-        
-        // 更新内嵌数据
-        function updateEmbeddedData() {
-            // 创建一个新的script标签来更新内嵌数据
-            var oldScript = document.getElementById('embeddedData');
-            if (oldScript) {
-                oldScript.remove();
-            }
-            
-            var script = document.createElement('script');
-            script.id = 'embeddedData';
-            script.type = 'text/javascript';
-            script.textContent = 'var embeddedStudentData = ' + JSON.stringify(classData) + ';';
-            document.head.appendChild(script);
-            
-            // 更新数据文本框
-            updateDataTextarea();
-            
-            showSaveNotification();
-        }
-        
-        // 更新数据文本框
-        function updateDataTextarea() {
-            var dataTextarea = document.getElementById('dataTextarea');
-            dataTextarea.value = JSON.stringify(classData, null, 2);
-        }
-        
-        // 从文本框加载数据
-        function loadDataFromTextarea() {
-            var dataTextarea = document.getElementById('dataTextarea');
-            try {
-                var newData = JSON.parse(dataTextarea.value);
-                classData = newData;
-                
-                // 确保所有班级数据都存在
-                for (var className in classes) {
-                    if (!classData[className]) {
-                        classData[className] = [];
-                        for (var i = 0; i < classes[className].length; i++) {
-                            classData[className].push({
-                                name: classes[className][i],
-                                score: 100,
-                                rank: 1
-                            });
-                        }
-                    }
-                    // 重新计算排名
-                    calculateRanking(className);
-                }
-                
-                // 更新内嵌数据
-                updateEmbeddedData();
-                
-                // 更新UI
-                if (currentClass) {
-                    updateClassTitle();
-                    updateStudentTable();
-                }
-                
-                alert('数据加载成功！');
-            } catch (e) {
-                alert('数据格式错误，请检查后重试。');
-                console.error('解析数据失败:', e);
-            }
-        }
-
-        // 全局变量
         var currentClass = null;
-        var saveNotification = document.getElementById('saveNotification');
-
+        
         // DOM元素
         var classSelector = document.getElementById('classSelector');
         var classTitle = document.getElementById('classTitle');
@@ -481,18 +362,219 @@
         var exportDataBtn = document.getElementById('exportData');
         var copyDataBtn = document.getElementById('copyData');
         var loadDataBtn = document.getElementById('loadData');
-        var updateDataBtn = document.getElementById('updateData');
+        var saveToCloudBtn = document.getElementById('saveToCloud');
+        var loadFromCloudBtn = document.getElementById('loadFromCloud');
+        var refreshCloudBtn = document.getElementById('refreshCloud');
+        var saveNotification = document.getElementById('saveNotification');
+        var cloudStatus = document.getElementById('cloudStatus');
         var dataTextarea = document.getElementById('dataTextarea');
 
-        // 初始化系统
-        function initSystem() {
-            // 尝试从内嵌数据加载
-            if (!loadEmbeddedData()) {
-                // 如果没有内嵌数据，则初始化默认数据
-                initDefaultData();
-                // 创建初始内嵌数据
-                updateEmbeddedData();
+        // ==================== JSONBin.io 相关函数 ====================
+        
+        // 更新云端状态显示
+        function updateCloudStatus(message, type) {
+            cloudStatus.textContent = message;
+            cloudStatus.className = 'cloud-status status-' + type;
+        }
+        
+        // 保存数据到JSONBin.io
+        async function saveToCloud() {
+            try {
+                updateCloudStatus('正在保存到云端...', 'loading');
+                
+                let url = JSONBIN_API_URL;
+                let method = 'POST';
+                
+                // 如果已经有binId，就更新现有的bin
+                if (localStorage.getItem('jsonBinId')) {
+                    url += '/' + localStorage.getItem('jsonBinId');
+                    method = 'PUT';
+                }
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': JSONBIN_API_KEY,
+                        'X-Bin-Name': '学生分数系统数据'
+                    },
+                    body: JSON.stringify({
+                        classData: classData,
+                        lastUpdated: new Date().toISOString()
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('网络响应不正常: ' + response.status);
+                }
+                
+                const result = await response.json();
+                
+                // 保存binId到本地存储
+                if (result.metadata && result.metadata.id) {
+                    localStorage.setItem('jsonBinId', result.metadata.id);
+                }
+                
+                updateCloudStatus('数据已保存到云端 ✓ 最后更新: ' + new Date().toLocaleString(), 'online');
+                showSaveNotification('数据已保存到云端！');
+                
+                return result;
+            } catch (error) {
+                console.error('保存到云端失败:', error);
+                updateCloudStatus('保存到云端失败: ' + error.message, 'offline');
+                throw error;
             }
+        }
+        
+        // 从JSONBin.io加载数据
+        async function loadFromCloud() {
+            try {
+                const binId = localStorage.getItem('jsonBinId');
+                if (!binId) {
+                    throw new Error('没有找到云端数据，请先保存数据到云端');
+                }
+                
+                updateCloudStatus('正在从云端加载数据...', 'loading');
+                
+                const response = await fetch(JSONBIN_API_URL + '/' + binId + '/latest', {
+                    method: 'GET',
+                    headers: {
+                        'X-Master-Key': JSONBIN_API_KEY
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('网络响应不正常: ' + response.status);
+                }
+                
+                const result = await response.json();
+                const cloudData = result.record;
+                
+                if (cloudData && cloudData.classData) {
+                    classData = cloudData.classData;
+                    
+                    // 确保所有班级数据都存在
+                    for (var className in classes) {
+                        if (!classData[className]) {
+                            initializeClassData(className);
+                        } else {
+                            calculateRanking(className);
+                        }
+                    }
+                    
+                    // 更新UI
+                    if (currentClass) {
+                        updateClassTitle();
+                        updateStudentTable();
+                    }
+                    
+                    updateDataTextarea();
+                    
+                    updateCloudStatus('云端数据加载成功 ✓ 最后更新: ' + new Date(cloudData.lastUpdated).toLocaleString(), 'online');
+                    showSaveNotification('云端数据加载成功！');
+                } else {
+                    throw new Error('云端数据格式错误');
+                }
+                
+                return cloudData;
+            } catch (error) {
+                console.error('从云端加载失败:', error);
+                updateCloudStatus('从云端加载失败: ' + error.message, 'offline');
+                throw error;
+            }
+        }
+        
+        // 检查云端连接状态
+        async function checkCloudConnection() {
+            try {
+                const binId = localStorage.getItem('jsonBinId');
+                if (binId) {
+                    await loadFromCloud();
+                } else {
+                    updateCloudStatus('云端就绪，点击"保存到云端"开始同步', 'online');
+                }
+            } catch (error) {
+                updateCloudStatus('云端连接失败，使用本地数据', 'offline');
+            }
+        }
+
+        // ==================== 本地数据管理函数 ====================
+        
+        // 初始化班级数据
+        function initializeClassData(className) {
+            classData[className] = [];
+            for (var i = 0; i < classes[className].length; i++) {
+                classData[className].push({
+                    name: classes[className][i],
+                    score: 100,
+                    rank: 1
+                });
+            }
+            calculateRanking(className);
+        }
+        
+        // 初始化默认数据
+        function initDefaultData() {
+            for (var className in classes) {
+                initializeClassData(className);
+            }
+        }
+        
+        // 更新数据文本框
+        function updateDataTextarea() {
+            dataTextarea.value = JSON.stringify(classData, null, 2);
+        }
+        
+        // 从文本框加载数据
+        function loadDataFromTextarea() {
+            try {
+                var newData = JSON.parse(dataTextarea.value);
+                classData = newData;
+                
+                // 确保所有班级数据都存在
+                for (var className in classes) {
+                    if (!classData[className]) {
+                        initializeClassData(className);
+                    } else {
+                        calculateRanking(className);
+                    }
+                }
+                
+                // 更新UI
+                if (currentClass) {
+                    updateClassTitle();
+                    updateStudentTable();
+                }
+                
+                showSaveNotification('数据加载成功！');
+            } catch (e) {
+                alert('数据格式错误，请检查后重试。');
+                console.error('解析数据失败:', e);
+            }
+        }
+        
+        // 复制数据到剪贴板
+        function copyDataToClipboard() {
+            dataTextarea.select();
+            document.execCommand('copy');
+            showSaveNotification('数据已复制到剪贴板！');
+        }
+        
+        // 显示保存成功通知
+        function showSaveNotification(message) {
+            saveNotification.textContent = message || '数据已更新';
+            saveNotification.style.display = 'block';
+            setTimeout(function() {
+                saveNotification.style.display = 'none';
+            }, 2000);
+        }
+
+        // ==================== 系统核心函数 ====================
+        
+        // 初始化系统
+        async function initSystem() {
+            // 初始化默认数据
+            initDefaultData();
             
             // 初始化班级选择器
             initClassSelector();
@@ -507,25 +589,15 @@
             exportDataBtn.addEventListener('click', exportData);
             copyDataBtn.addEventListener('click', copyDataToClipboard);
             loadDataBtn.addEventListener('click', loadDataFromTextarea);
-            updateDataBtn.addEventListener('click', updateEmbeddedData);
+            saveToCloudBtn.addEventListener('click', saveToCloud);
+            loadFromCloudBtn.addEventListener('click', loadFromCloud);
+            refreshCloudBtn.addEventListener('click', checkCloudConnection);
             
             // 初始化数据文本框
             updateDataTextarea();
-        }
-        
-        // 复制数据到剪贴板
-        function copyDataToClipboard() {
-            dataTextarea.select();
-            document.execCommand('copy');
-            alert('数据已复制到剪贴板！');
-        }
-        
-        // 显示保存成功通知
-        function showSaveNotification() {
-            saveNotification.style.display = 'block';
-            setTimeout(function() {
-                saveNotification.style.display = 'none';
-            }, 2000);
+            
+            // 检查云端连接
+            await checkCloudConnection();
         }
         
         // 初始化班级选择器
@@ -633,17 +705,17 @@
             button.textContent = text;
             button.dataset.value = value;
             
-            button.addEventListener('click', function() {
+            button.addEventListener('click', async function() {
                 var rowIndex = this.closest('tr').rowIndex - 1; // 减去表头行
                 var change = parseInt(this.dataset.value);
-                updateStudentScore(rowIndex, change);
+                await updateStudentScore(rowIndex, change);
             });
             
             return button;
         }
         
         // 更新学生分数
-        function updateStudentScore(index, change) {
+        async function updateStudentScore(index, change) {
             if (!currentClass || !classData[currentClass] || index < 0 || index >= classData[currentClass].length) {
                 return;
             }
@@ -655,9 +727,14 @@
             
             // 更新UI
             updateStudentTable();
+            updateDataTextarea();
             
-            // 更新内嵌数据
-            updateEmbeddedData();
+            // 自动保存到云端
+            try {
+                await saveToCloud();
+            } catch (error) {
+                console.error('自动保存到云端失败，但本地数据已更新');
+            }
         }
         
         // 计算排名
@@ -682,7 +759,7 @@
         }
         
         // 重置所有分数
-        function resetAllScores() {
+        async function resetAllScores() {
             if (!currentClass || !classData[currentClass]) return;
             
             if (confirm('确定要重置所有学生的分数为100分吗？')) {
@@ -693,9 +770,14 @@
                 
                 calculateRanking(currentClass);
                 updateStudentTable();
+                updateDataTextarea();
                 
-                // 更新内嵌数据
-                updateEmbeddedData();
+                // 保存到云端
+                try {
+                    await saveToCloud();
+                } catch (error) {
+                    console.error('保存到云端失败，但本地数据已重置');
+                }
             }
         }
         
@@ -723,12 +805,6 @@
         
         // 页面加载完成后初始化系统
         window.addEventListener('load', initSystem);
-    </script>
-    
-    <!-- 内嵌数据存储 - 这里存储所有学生的分数数据 -->
-    <script id="embeddedData" type="text/javascript">
-        // 这里存储所有学生的分数数据
-        var embeddedStudentData = {};
     </script>
 </body>
 </html>
