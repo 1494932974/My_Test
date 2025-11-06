@@ -2,63 +2,733 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="renderer" content="webkit">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的第一个网站</title>
+    <title>学生分数登记排名系统</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            min-height: 100vh;
             padding: 20px;
-            background-color: #f5f5f5;
+            color: #333;
         }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(to right, #2c3e50, #4a69bd);
             color: white;
-            padding: 40px;
+            padding: 20px;
             text-align: center;
-            border-radius: 10px;
-            margin-bottom: 30px;
         }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+        }
+        
+        .class-selector {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .class-btn {
+            padding: 8px 16px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .class-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .class-btn.active {
+            background-color: white;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+        
         .content {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
         }
-        .success {
-            background: #d4edda;
-            color: #155724;
+        
+        .student-list {
+            background-color: #f8f9fa;
+            border-radius: 8px;
             padding: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .student-list h2 {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        
+        .student-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .student-table th, .student-table td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        
+        .student-table th {
+            background-color: #4a69bd;
+            color: white;
+        }
+        
+        .student-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        
+        .student-table tr:hover {
+            background-color: #e9ecef;
+        }
+        
+        .rank-1 {
+            background-color: gold !important;
+        }
+        
+        .rank-2 {
+            background-color: silver !important;
+        }
+        
+        .rank-3 {
+            background-color: #cd7f32 !important;
+        }
+        
+        .score-controls {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        .score-btn {
+            padding: 6px 12px;
+            background-color: #4a69bd;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        
+        .score-btn:hover {
+            background-color: #3c5aa8;
+        }
+        
+        .score-btn.add {
+            background-color: #28a745;
+        }
+        
+        .score-btn.add:hover {
+            background-color: #218838;
+        }
+        
+        .score-btn.subtract {
+            background-color: #dc3545;
+        }
+        
+        .score-btn.subtract:hover {
+            background-color: #c82333;
+        }
+        
+        .actions {
+            padding: 15px;
+            text-align: center;
+            border-top: 1px solid #ddd;
+            background-color: #f8f9fa;
+        }
+        
+        .action-btn {
+            padding: 10px 20px;
+            margin: 0 10px;
+            background-color: #4a69bd;
+            color: white;
+            border: none;
             border-radius: 5px;
-            margin: 20px 0;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .action-btn:hover {
+            background-color: #3c5aa8;
+        }
+        
+        .student-count {
+            font-size: 14px;
+            font-weight: normal;
+            margin-left: 10px;
+            color: #e9ecef;
+        }
+        
+        .save-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #28a745;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 1000;
+        }
+        
+        .data-management {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .data-textarea {
+            width: 100%;
+            height: 100px;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            resize: vertical;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🎉 欢迎访问我的网站！</h1>
-        <p>这是通过 GitHub Pages 部署的网站</p>
-    </div>
-    
-    <div class="content">
-        <div class="success">
-            <strong>成功！</strong> 这个网站现在可以通过互联网访问了！
+    <div class="container">
+        <div class="header">
+            <h1>学生分数登记排名系统</h1>
+            <p>兼容Win7系统和低版本360浏览器 - 数据保存在HTML文件中</p>
+            <div class="class-selector" id="classSelector">
+                <!-- 班级按钮将通过JavaScript动态生成 -->
+            </div>
         </div>
         
-        <h2>关于这个网站</h2>
-        <p>这是一个使用 GitHub Pages 创建的静态网站。全世界任何人都可以访问它！</p>
+        <div class="content">
+            <div class="student-list">
+                <h2 id="classTitle">学生分数排名</h2>
+                <table class="student-table">
+                    <thead>
+                        <tr>
+                            <th>排名</th>
+                            <th>姓名</th>
+                            <th>分数</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentTableBody">
+                        <!-- 学生数据将通过JavaScript动态生成 -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="data-management">
+                <h3>数据管理</h3>
+                <p>复制以下数据并保存，下次使用时粘贴并点击"加载数据"</p>
+                <textarea class="data-textarea" id="dataTextarea" readonly></textarea>
+                <div>
+                    <button class="action-btn" id="copyData">复制数据</button>
+                    <button class="action-btn" id="loadData">加载数据</button>
+                    <button class="action-btn" id="updateData">更新数据</button>
+                </div>
+            </div>
+        </div>
         
-        <h2>功能特点</h2>
-        <ul>
-            <li>✅ 完全免费托管</li>
-            <li>✅ 自动 HTTPS 安全连接</li>
-            <li>✅ 全球 CDN 加速</li>
-            <li>✅ 支持自定义域名</li>
-        </ul>
-        
-        <h2>下一步可以做什么？</h2>
-        <p>你可以继续添加更多 HTML 页面、CSS 样式、JavaScript 功能，或者上传图片等资源文件。</p>
+        <div class="actions">
+            <button class="action-btn" id="resetScores">重置所有分数</button>
+            <button class="action-btn" id="exportData">导出数据</button>
+        </div>
     </div>
+    
+    <div class="save-notification" id="saveNotification">数据已更新</div>
+
+    <script>
+        // 多班级学生名单 - 使用之前点名系统的数据
+        var classes = {
+            "2501班": [
+                "白璟晟", "白茗宇", "陈子钦", "樊松嘉", "冯奇奇", 
+                "高振宇", "葛建辉", "韩文辉", "胡珂宁", "解博", 
+                "李方圆", "李世豪", "李振阳", "刘光乐", "刘建宇", 
+                "刘凯洲", "刘周", "吕敖舟", "马浩轩", "马志文", 
+                "牛浩宇", "任锦康", "任瑞佳", "任新超", "申炳光", 
+                "申凯华", "苏小龙", "孙卓轩", "田琛凯", "王福帅", 
+                "王浩辉", "王建凯", "王铭杰", "王帅", "王涛", 
+                "王炎斌", "王宇杰", "魏志贤", "武宏强", "闫永峰", 
+                "员鑫", "张川昊", "张润泉", "郑泽荣", "周铭宇", 
+                "周妍竹", "周懿", "朱旭昭"
+            ],
+            "2502班": [
+                "安岛毅", "白培佑", "程鑫洋", "程宇鑫", "董洪博", 
+                "杜浩燃", "冯豪煊", "高嘉鑫", "高捷", "高涛涛", 
+                "郭家公", "侯志松", "贾惠雯", "景子豪", "李鹏", 
+                "刘国庆", "刘建文", "刘晋涛", "刘晋宇", "孟嘉辉", 
+                "乔昱翰", "乔钲淳", "秦一展", "王东兴", "王浩", 
+                "王家豪", "王江隆", "王俊杰", "王麒翔", "王亚鹏", 
+                "邢泽东", "薛云天", "杨敬淞", "云晴", "张泽宇", 
+                "张哲", "赵晨帆", "赵冠彭", "赵进新", "赵文杰", 
+                "赵中", "宗泽鹏"
+            ],
+            "2503班": [
+                "毕浩然", "曹鑫瑶", "常建国", "车浩宁", "陈晨", 
+                "董世杰", "付子初", "郭书琦", "郭天翔", "郭中旺", 
+                "海少华", "黄铭泉", "霍鑫旺", "吉子号", "来千尧", 
+                "兰吉煜", "李卓鹏", "刘伟", "刘新业", "刘宇皓", 
+                "吕欣宇", "马祺昀", "孟川雄", "孟益晨", "权香宇", 
+                "任智勇", "师松涛", "孙雨", "王陈宇", "王诚", 
+                "王国华", "王俊昊", "徐昊斐", "颜文浩", "杨超凡", 
+                "阴宏伟", "岳锦昊", "张飞扬", "张强强", "张瑞旭", 
+                "张禹浩", "张原雨", "张郅昊", "张子灏", "赵晨旭", 
+                "赵煊", "赵子昊"
+            ],
+            "2504班": [
+                "安晨原", "白佩勇", "鲍雅泽", "曹洺豪", "曹瑞超", 
+                "常瑞凡", "崔鑫杰", "樊博文", "樊明昊", "范泽旗", 
+                "方超", "高康康", "高思忠", "韩雅栋", "侯雅萍", 
+                "李浩然", "李沛宏", "李扬帆", "梁元彬", "刘建洋", 
+                "刘景瑞", "刘世明", "刘旭青", "柳毅卓", "孟庆杰", 
+                "桑树威", "孙民旺", "孙晓强", "唐学瑾", "王帅康", 
+                "王杨筑", "魏杰", "闫锦锡", "闫宇曦", "杨耀祖", 
+                "尹锦涛", "岳昱同", "翟梦辉", "张锦龙", "张英源", 
+                "张宇杰", "章晶", "郑清", "周健博"
+            ],
+            "2505班": [
+                "常文凯", "陈梓丛", "崔新宇", "杜名伟", "杜权鑫", 
+                "高浩杰", "高明宇", "关皓予", "韩培民", "何佳雨", 
+                "胡嘉硕", "黄怡凡", "贾晶涵", "景瑞程", "亢振豪", 
+                "李超雄", "李亚明", "廉梓晨", "刘居谦", "刘仔聪", 
+                "雒文伟", "裴德鑫", "师毅豪", "孙锦飞", "孙智鑫", 
+                "田晨光", "田鑫源", "王博研", "王述仁", "王宇鑫", 
+                "魏天城", "吴瑞雰", "邢家宁", "薛帅康", "薛志聪", 
+                "要吉安", "尤柯", "张航律", "张佳桦", "张炜晨", 
+                "赵昱杰", "郑丁豪"
+            ],
+            "2506班": [
+                "白轲元", "邓敏杰", "董宇明", "范珈豪", "范智慧", 
+                "冯琪翔", "冯郑歌", "冯子涛", "高伟成", "郭欣瑞", 
+                "候治睿", "姜凯雯", "焦奕铭", "李阳", "李永壮", 
+                "刘冠华", "刘文涛", "乔嘉豪", "乔政玮", "申彦泽", 
+                "王玉博", "夏瑜璞", "许慧旺", "杨志宏", "张晨雨", 
+                "张昊国", "张鸿钊", "张伟", "张文龙", "张伊华", 
+                "张雨", "张雲博", "赵一明", "赵苑翔", "郑嘉泽", 
+                "周嘉诚"
+            ],
+            "2507班": [
+                "安一鸣", "陈建旭", "陈林鹏", "邓宇博", "公维龙", 
+                "郭泰", "韩云山", "韩智敏", "郝佳", "郝雷雷", 
+                "李泊桦", "李博", "李嘉戌", "李锦峰", "连锦标", 
+                "令狐博涛", "刘程岩", "刘梵伟", "刘俊廷", "马超", 
+                "石岚斐", "帅超斌", "宋泽彬", "田素玮", "王泓森", 
+                "王济航", "王嘉辉", "王靖升", "王静宇", "王沛杰", 
+                "王艺博", "王泽慧", "王子明", "许林博", "薛皓天", 
+                "姚帅杰", "尹栋", "原思贤", "张达成", "张洪畅", 
+                "张敬恩", "张珠涛", "赵晓彤", "赵鑫"
+            ]
+        };
+
+        // 全局变量 - 这里存储所有学生的分数数据
+        var classData = {};
+        
+        // 初始化默认数据
+        function initDefaultData() {
+            for (var className in classes) {
+                classData[className] = [];
+                for (var i = 0; i < classes[className].length; i++) {
+                    classData[className].push({
+                        name: classes[className][i],
+                        score: 100,
+                        rank: 1
+                    });
+                }
+                // 初始化排名
+                calculateRanking(className);
+            }
+        }
+        
+        // 尝试从内嵌数据加载
+        function loadEmbeddedData() {
+            // 检查是否有内嵌数据
+            if (typeof embeddedStudentData !== 'undefined' && embeddedStudentData) {
+                classData = JSON.parse(JSON.stringify(embeddedStudentData));
+                
+                // 确保所有班级数据都存在
+                for (var className in classes) {
+                    if (!classData[className]) {
+                        classData[className] = [];
+                        for (var i = 0; i < classes[className].length; i++) {
+                            classData[className].push({
+                                name: classes[className][i],
+                                score: 100,
+                                rank: 1
+                            });
+                        }
+                    }
+                    // 重新计算排名
+                    calculateRanking(className);
+                }
+                return true;
+            }
+            return false;
+        }
+        
+        // 更新内嵌数据
+        function updateEmbeddedData() {
+            // 创建一个新的script标签来更新内嵌数据
+            var oldScript = document.getElementById('embeddedData');
+            if (oldScript) {
+                oldScript.remove();
+            }
+            
+            var script = document.createElement('script');
+            script.id = 'embeddedData';
+            script.type = 'text/javascript';
+            script.textContent = 'var embeddedStudentData = ' + JSON.stringify(classData) + ';';
+            document.head.appendChild(script);
+            
+            // 更新数据文本框
+            updateDataTextarea();
+            
+            showSaveNotification();
+        }
+        
+        // 更新数据文本框
+        function updateDataTextarea() {
+            var dataTextarea = document.getElementById('dataTextarea');
+            dataTextarea.value = JSON.stringify(classData, null, 2);
+        }
+        
+        // 从文本框加载数据
+        function loadDataFromTextarea() {
+            var dataTextarea = document.getElementById('dataTextarea');
+            try {
+                var newData = JSON.parse(dataTextarea.value);
+                classData = newData;
+                
+                // 确保所有班级数据都存在
+                for (var className in classes) {
+                    if (!classData[className]) {
+                        classData[className] = [];
+                        for (var i = 0; i < classes[className].length; i++) {
+                            classData[className].push({
+                                name: classes[className][i],
+                                score: 100,
+                                rank: 1
+                            });
+                        }
+                    }
+                    // 重新计算排名
+                    calculateRanking(className);
+                }
+                
+                // 更新内嵌数据
+                updateEmbeddedData();
+                
+                // 更新UI
+                if (currentClass) {
+                    updateClassTitle();
+                    updateStudentTable();
+                }
+                
+                alert('数据加载成功！');
+            } catch (e) {
+                alert('数据格式错误，请检查后重试。');
+                console.error('解析数据失败:', e);
+            }
+        }
+
+        // 全局变量
+        var currentClass = null;
+        var saveNotification = document.getElementById('saveNotification');
+
+        // DOM元素
+        var classSelector = document.getElementById('classSelector');
+        var classTitle = document.getElementById('classTitle');
+        var studentTableBody = document.getElementById('studentTableBody');
+        var resetScoresBtn = document.getElementById('resetScores');
+        var exportDataBtn = document.getElementById('exportData');
+        var copyDataBtn = document.getElementById('copyData');
+        var loadDataBtn = document.getElementById('loadData');
+        var updateDataBtn = document.getElementById('updateData');
+        var dataTextarea = document.getElementById('dataTextarea');
+
+        // 初始化系统
+        function initSystem() {
+            // 尝试从内嵌数据加载
+            if (!loadEmbeddedData()) {
+                // 如果没有内嵌数据，则初始化默认数据
+                initDefaultData();
+                // 创建初始内嵌数据
+                updateEmbeddedData();
+            }
+            
+            // 初始化班级选择器
+            initClassSelector();
+            
+            // 默认选择第一个班级
+            if (Object.keys(classes).length > 0) {
+                selectClass(Object.keys(classes)[0]);
+            }
+            
+            // 绑定事件
+            resetScoresBtn.addEventListener('click', resetAllScores);
+            exportDataBtn.addEventListener('click', exportData);
+            copyDataBtn.addEventListener('click', copyDataToClipboard);
+            loadDataBtn.addEventListener('click', loadDataFromTextarea);
+            updateDataBtn.addEventListener('click', updateEmbeddedData);
+            
+            // 初始化数据文本框
+            updateDataTextarea();
+        }
+        
+        // 复制数据到剪贴板
+        function copyDataToClipboard() {
+            dataTextarea.select();
+            document.execCommand('copy');
+            alert('数据已复制到剪贴板！');
+        }
+        
+        // 显示保存成功通知
+        function showSaveNotification() {
+            saveNotification.style.display = 'block';
+            setTimeout(function() {
+                saveNotification.style.display = 'none';
+            }, 2000);
+        }
+        
+        // 初始化班级选择器
+        function initClassSelector() {
+            for (var className in classes) {
+                var classBtn = document.createElement('button');
+                classBtn.className = 'class-btn';
+                classBtn.textContent = className;
+                classBtn.addEventListener('click', function() {
+                    selectClass(this.textContent);
+                });
+                classSelector.appendChild(classBtn);
+            }
+        }
+        
+        // 选择班级
+        function selectClass(className) {
+            currentClass = className;
+            
+            // 更新UI
+            var classButtons = document.querySelectorAll('.class-btn');
+            for (var i = 0; i < classButtons.length; i++) {
+                classButtons[i].classList.remove('active');
+                if (classButtons[i].textContent === className) {
+                    classButtons[i].classList.add('active');
+                }
+            }
+            
+            // 更新标题和学生人数
+            updateClassTitle();
+            
+            // 更新学生表格
+            updateStudentTable();
+        }
+        
+        // 更新班级标题和学生人数
+        function updateClassTitle() {
+            if (!currentClass || !classData[currentClass]) return;
+            
+            var studentCount = classData[currentClass].length;
+            classTitle.innerHTML = currentClass + ' 学生分数排名 <span class="student-count">(共' + studentCount + '人)</span>';
+        }
+        
+        // 更新学生表格
+        function updateStudentTable() {
+            studentTableBody.innerHTML = '';
+            
+            if (!currentClass || !classData[currentClass]) return;
+            
+            var students = classData[currentClass];
+            
+            for (var i = 0; i < students.length; i++) {
+                var student = students[i];
+                var row = document.createElement('tr');
+                
+                // 为前三名添加特殊样式
+                if (student.rank === 1) {
+                    row.className = 'rank-1';
+                } else if (student.rank === 2) {
+                    row.className = 'rank-2';
+                } else if (student.rank === 3) {
+                    row.className = 'rank-3';
+                }
+                
+                // 排名单元格
+                var rankCell = document.createElement('td');
+                rankCell.textContent = student.rank;
+                row.appendChild(rankCell);
+                
+                // 姓名单元格
+                var nameCell = document.createElement('td');
+                nameCell.textContent = student.name;
+                row.appendChild(nameCell);
+                
+                // 分数单元格
+                var scoreCell = document.createElement('td');
+                scoreCell.textContent = student.score;
+                row.appendChild(scoreCell);
+                
+                // 操作单元格
+                var actionCell = document.createElement('td');
+                actionCell.className = 'score-controls';
+                
+                // 创建四个固定数值的按钮：+5, +10, -5, -10
+                var add5Btn = createScoreButton('+5', 5, 'add');
+                var add10Btn = createScoreButton('+10', 10, 'add');
+                var subtract5Btn = createScoreButton('-5', -5, 'subtract');
+                var subtract10Btn = createScoreButton('-10', -10, 'subtract');
+                
+                actionCell.appendChild(add5Btn);
+                actionCell.appendChild(add10Btn);
+                actionCell.appendChild(subtract5Btn);
+                actionCell.appendChild(subtract10Btn);
+                
+                row.appendChild(actionCell);
+                
+                studentTableBody.appendChild(row);
+            }
+        }
+        
+        // 创建分数按钮
+        function createScoreButton(text, value, type) {
+            var button = document.createElement('button');
+            button.className = 'score-btn ' + type;
+            button.textContent = text;
+            button.dataset.value = value;
+            
+            button.addEventListener('click', function() {
+                var rowIndex = this.closest('tr').rowIndex - 1; // 减去表头行
+                var change = parseInt(this.dataset.value);
+                updateStudentScore(rowIndex, change);
+            });
+            
+            return button;
+        }
+        
+        // 更新学生分数
+        function updateStudentScore(index, change) {
+            if (!currentClass || !classData[currentClass] || index < 0 || index >= classData[currentClass].length) {
+                return;
+            }
+            
+            classData[currentClass][index].score += change;
+            
+            // 重新计算排名
+            calculateRanking(currentClass);
+            
+            // 更新UI
+            updateStudentTable();
+            
+            // 更新内嵌数据
+            updateEmbeddedData();
+        }
+        
+        // 计算排名
+        function calculateRanking(className) {
+            if (!classData[className]) return;
+            
+            var students = classData[className];
+            
+            // 按分数降序排序
+            students.sort(function(a, b) {
+                return b.score - a.score;
+            });
+            
+            // 计算排名（处理并列情况）
+            var rank = 1;
+            for (var i = 0; i < students.length; i++) {
+                if (i > 0 && students[i].score < students[i-1].score) {
+                    rank = i + 1;
+                }
+                students[i].rank = rank;
+            }
+        }
+        
+        // 重置所有分数
+        function resetAllScores() {
+            if (!currentClass || !classData[currentClass]) return;
+            
+            if (confirm('确定要重置所有学生的分数为100分吗？')) {
+                var students = classData[currentClass];
+                for (var i = 0; i < students.length; i++) {
+                    students[i].score = 100;
+                }
+                
+                calculateRanking(currentClass);
+                updateStudentTable();
+                
+                // 更新内嵌数据
+                updateEmbeddedData();
+            }
+        }
+        
+        // 导出数据
+        function exportData() {
+            if (!currentClass || !classData[currentClass]) return;
+            
+            var students = classData[currentClass];
+            var csvContent = "data:text/csv;charset=utf-8,\uFEFF排名,姓名,分数\n";
+            
+            for (var i = 0; i < students.length; i++) {
+                var student = students[i];
+                csvContent += student.rank + "," + student.name + "," + student.score + "\n";
+            }
+            
+            var encodedUri = encodeURI(csvContent);
+            var link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", currentClass + "分数数据.csv");
+            document.body.appendChild(link);
+            
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // 页面加载完成后初始化系统
+        window.addEventListener('load', initSystem);
+    </script>
+    
+    <!-- 内嵌数据存储 - 这里存储所有学生的分数数据 -->
+    <script id="embeddedData" type="text/javascript">
+        // 这里存储所有学生的分数数据
+        var embeddedStudentData = {};
+    </script>
 </body>
 </html>
